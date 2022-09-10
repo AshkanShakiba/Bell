@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+
+{% block title %}Bell Home{% endblock title %}
+
+{% block content %}
+    {% if user.is_authenticated %}
+        Hi {{ user.username }}!
+        <p><a href="{% url 'logout' %}">Log Out</a></p>
+    {% else %}
+        <a href="{% url 'login' %}">Sellers Log In</a> |
+        <a href="{% url 'signup' %}">Verification Request</a>
+    {% endif %}
+{% endblock content %}
