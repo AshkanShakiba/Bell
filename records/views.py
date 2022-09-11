@@ -4,6 +4,7 @@ from django.views.generic.detail import SingleObjectMixin
 from django.urls import reverse
 from django.views import View
 
+from pages import views as home_view
 from .models import IncreaseRecord, SaleRecord
 from .forms import IncreaseRecordForm, SaleRecordForm
 
@@ -32,6 +33,7 @@ class IncreasePost(LoginRequiredMixin, SingleObjectMixin, FormView):
         return super().form_valid(form)
 
     def get_success_url(self):
+        home_view.set_message("increase credit done successfully")
         return reverse("home")
 
 
@@ -69,6 +71,7 @@ class SalePost(LoginRequiredMixin, SingleObjectMixin, FormView):
         return super().form_valid(form)
 
     def get_success_url(self):
+        home_view.set_message("sale credit done successfully")
         return reverse("home")
 
 

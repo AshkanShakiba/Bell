@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     # local:
     "sellers.apps.SellersConfig",
     "records.apps.RecordsConfig",
+    "pages.apps.PagesConfig",
     # third party:
     "crispy_forms",
     "crispy_bootstrap5",

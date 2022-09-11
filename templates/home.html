@@ -5,6 +5,8 @@
 {% block content %}
     {% if user.is_authenticated %}
         <h4>Hi {{ user.username }}!</h4>
+        <h4>Your Credit: {{ user.credit }}</h4>
+        <h4 style="text-align: center">{{ message }}</h4>
         {% if user.is_confirmed %}
             <p><a href="{% url 'increase' %}" class="btn btn-outline-primary me-2">Increase Credit</a></p>
             <p><a href="{% url 'sale' %}" class="btn btn-outline-primary me-2">Sale Credit</a></p>
