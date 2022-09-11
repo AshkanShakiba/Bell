@@ -4,10 +4,16 @@
 
 {% block content %}
     {% if user.is_authenticated %}
-        Hi {{ user.username }}!
-        <p><a href="{% url 'logout' %}">Log Out</a></p>
+        <h4>Hi {{ user.username }}!</h4>
+        {% if user.is_confirmed %}
+            <p><a href="{% url 'increase' %}" class="btn btn-outline-primary me-2">Increase Credit</a></p>
+            <p><a href="{% url 'sale' %}" class="btn btn-outline-primary me-2">Sale Credit</a></p>
+        {% else %}
+            <h4>Please wait until bell's administrator confirm your account.</h4>
+        {% endif %}
+        <p><a href="{% url 'logout' %}" class="btn btn-outline-primary me-2">Log Out</a></p>
     {% else %}
-        <a href="{% url 'login' %}">Sellers Log In</a> |
-        <a href="{% url 'signup' %}">Verification Request</a>
+        <p><a href="{% url 'login' %}" class="btn btn-outline-primary me-2">Sellers Log In</a></p>
+        <p><a href="{% url 'signup' %}" class="btn btn-outline-primary me-2">Verification Request</a></p>
     {% endif %}
 {% endblock content %}

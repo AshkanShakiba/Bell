@@ -10,13 +10,14 @@ class IncreaseRecord(models.Model):
     completed = models.BooleanField(default=False)
 
     def __str__(self):
-        return str(self.id) + ":" + str(self.amount)
+        return str(self.seller.name) + ":" + str(self.amount) + "(" + str(self.date) + ")"
 
     def save(self, force_insert=False, force_update=False, using=None, update_fields=None):
-        self.seller.credit += self.amount
-        self.seller.save()
-        self.completed = True
-        super().save(force_insert=force_insert, force_update=force_update, using=using, update_fields=update_fields)
+        if not self.completed:
+            self.seller.credit += self.amount
+            self.seller.save()
+            self.completed = True
+            super().save(force_insert=force_insert, force_update=force_update, using=using, update_fields=update_fields)
 
 
 class SaleRecord(models.Model):
@@ -27,14 +28,16 @@ class SaleRecord(models.Model):
     completed = models.BooleanField(default=False)
 
     def __str__(self):
-        return str(self.id) + ":" + str(self.amount)
+        return str(self.seller.name) + "->" + str(self.phone_number) + ":" + str(self.amount) + \
+               "(" + str(self.date) + ")"
 
     def save(self, force_insert=False, force_update=False, using=None, update_fields=None):
-        credit = self.seller.credit - self.amount
-        if credit >= 0:
-            self.seller.credit = credit
-            self.seller.save()
-            self.completed = True
-        else:
-            pass
-        super().save(force_insert=force_insert, force_update=force_update, using=using, update_fields=update_fields)
+        if not self.completed:
+            credit = self.seller.credit - self.amount
+            if credit >= 0:
+                self.seller.credit = credit
+                self.seller.save()
+                self.completed = True
+            else:
+                pass
+            super().save(force_insert=force_insert, force_update=force_update, using=using, update_fields=update_fields)
