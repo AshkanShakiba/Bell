@@ -37,6 +37,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     # local:
     "sellers.apps.SellersConfig",
+    "records.apps.RecordsConfig",
     # third party:
     "crispy_forms",
     "crispy_bootstrap5",
