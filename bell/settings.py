@@ -43,11 +43,16 @@ INSTALLED_APPS = [
     "crispy_forms",
     "crispy_bootstrap5",
     "rest_framework",
+    "rest_framework.authtoken",
+    "dj_rest_auth",
 ]
 
 REST_FRAMEWORK = {
     "DEFAULT_PERMISSION_CLASSES": [
         "rest_framework.permissions.IsAuthenticated",
+    ],
+    "DEFAULT_AUTHENTICATION_CLASSES": [
+        "rest_framework.authentication.TokenAuthentication",
     ],
 }
 

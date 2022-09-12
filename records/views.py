@@ -32,10 +32,13 @@ class IncreasePost(LoginRequiredMixin, SingleObjectMixin, FormView):
         record = form.save(commit=False)
         record.seller = self.request.user
         record.save()
+        if record.completed:
+            home_view.set_message("increase credit done successfully")
+        else:
+            home_view.set_message("increase credit failed, server-side error")
         return super().form_valid(form)
 
     def get_success_url(self):
-        home_view.set_message("increase credit done successfully")
         return reverse("home")
 
 
@@ -70,10 +73,16 @@ class SalePost(LoginRequiredMixin, SingleObjectMixin, FormView):
         record = form.save(commit=False)
         record.seller = self.request.user
         record.save()
+        if record.completed:
+            home_view.set_message("sale credit done successfully")
+        else:
+            if record.amount > record.seller.credit:
+                home_view.set_message("sale credit failed, not enough credit")
+            else:
+                home_view.set_message("sale credit failed, server-side error")
         return super().form_valid(form)
 
     def get_success_url(self):
-        home_view.set_message("sale credit done successfully")
         return reverse("home")
 
 
@@ -87,42 +96,61 @@ class SaleView(LoginRequiredMixin, View):
         return view(request, *args, **kwargs)
 
 
-@api_view(['POST'])
+@api_view(["GET"])
+def credit_api_view(request):
+    if request.user.is_confirmed:
+        seller = request.user
+        return Response({"credit": seller.credit}, status=200)
+    else:
+        return Response({"detail": "please wait until bell's administrator confirm your account."}, status=403)
+
+
+@api_view(["POST"])
 def increase_api_view(request):
     if request.user.is_confirmed:
         data = request.data
         amount = data["amount"]
         seller = request.user
-        if isinstance(amount, int):
-            IncreaseRecord.objects.create(
+        if isinstance(amount, int) and amount > 0:
+            record = IncreaseRecord.objects.create(
                 amount=amount,
                 seller=seller,
             )
-            return Response({"detail": "increase credit done successfully"}, status=200)
+            if record.completed:
+                return Response({"credit": seller.credit, "detail": "increase credit done successfully"}, status=200)
+            else:
+                return Response({"detail": "increase credit failed", "error": "server-side error"}, status=500)
         else:
-            return Response({"detail": "increase credit failed", "error": "amount must be an integer"}, status=400)
+            return Response({"detail": "increase credit failed", "error": "amount must be a positive integer"},
+                            status=400)
     else:
         return Response({"detail": "please wait until bell's administrator confirm your account."}, status=403)
 
 
-@api_view(['POST'])
+@api_view(["POST"])
 def sale_api_view(request):
     if request.user.is_confirmed:
         data = request.data
         amount = data["amount"]
         phone_number = data["phone_number"]
         seller = request.user
-        if isinstance(amount, int):
+        if isinstance(amount, int) and amount > 0:
             if isinstance(phone_number, str):
-                SaleRecord.objects.create(
+                record = SaleRecord.objects.create(
                     amount=amount,
                     seller=seller,
                     phone_number=phone_number,
                 )
-                return Response({"detail": "sale credit done successfully"}, status=200)
+                if record.completed:
+                    return Response({"credit": seller.credit, "detail": "sale credit done successfully"}, status=200)
+                else:
+                    if amount > seller.credit:
+                        return Response({"detail": "sale credit failed", "error": "not enough credit"}, status=400)
+                    else:
+                        return Response({"detail": "sale credit failed", "error": "server-side error"}, status=500)
             else:
                 return Response({"detail": "sale credit failed", "error": "phone_number must be a string"}, status=400)
         else:
-            return Response({"detail": "sale credit failed", "error": "amount must be an integer"}, status=400)
+            return Response({"detail": "sale credit failed", "error": "amount must be a positive integer"}, status=400)
     else:
         return Response({"detail": "please wait until bell's administrator confirm your account."}, status=403)
