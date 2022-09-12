@@ -3,6 +3,8 @@ from django.views.generic import TemplateView, FormView
 from django.views.generic.detail import SingleObjectMixin
 from django.urls import reverse
 from django.views import View
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
 
 from pages import views as home_view
 from .models import IncreaseRecord, SaleRecord
@@ -83,3 +85,44 @@ class SaleView(LoginRequiredMixin, View):
     def post(self, request, *args, **kwargs):
         view = SalePost.as_view()
         return view(request, *args, **kwargs)
+
+
+@api_view(['POST'])
+def increase_api_view(request):
+    if request.user.is_confirmed:
+        data = request.data
+        amount = data["amount"]
+        seller = request.user
+        if isinstance(amount, int):
+            IncreaseRecord.objects.create(
+                amount=amount,
+                seller=seller,
+            )
+            return Response({"detail": "increase credit done successfully"}, status=200)
+        else:
+            return Response({"detail": "increase credit failed", "error": "amount must be an integer"}, status=400)
+    else:
+        return Response({"detail": "please wait until bell's administrator confirm your account."}, status=403)
+
+
+@api_view(['POST'])
+def sale_api_view(request):
+    if request.user.is_confirmed:
+        data = request.data
+        amount = data["amount"]
+        phone_number = data["phone_number"]
+        seller = request.user
+        if isinstance(amount, int):
+            if isinstance(phone_number, str):
+                SaleRecord.objects.create(
+                    amount=amount,
+                    seller=seller,
+                    phone_number=phone_number,
+                )
+                return Response({"detail": "sale credit done successfully"}, status=200)
+            else:
+                return Response({"detail": "sale credit failed", "error": "phone_number must be a string"}, status=400)
+        else:
+            return Response({"detail": "sale credit failed", "error": "amount must be an integer"}, status=400)
+    else:
+        return Response({"detail": "please wait until bell's administrator confirm your account."}, status=403)

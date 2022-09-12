@@ -42,7 +42,14 @@ INSTALLED_APPS = [
     # third party:
     "crispy_forms",
     "crispy_bootstrap5",
+    "rest_framework",
 ]
+
+REST_FRAMEWORK = {
+    "DEFAULT_PERMISSION_CLASSES": [
+        "rest_framework.permissions.IsAuthenticated",
+    ],
+}
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
