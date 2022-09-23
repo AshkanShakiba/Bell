@@ -3,9 +3,11 @@ from django.views.generic import TemplateView, FormView
 from django.views.generic.detail import SingleObjectMixin
 from django.urls import reverse
 from django.views import View
+from django.db import transaction
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
+from sellers.models import Seller
 from pages import views as home_view
 from .models import IncreaseRecord, SaleRecord
 from .forms import IncreaseRecordForm, SaleRecordForm
@@ -105,21 +107,38 @@ def credit_api_view(request):
         return Response({"detail": "please wait until bell's administrator confirm your account."}, status=403)
 
 
+@transaction.atomic
 @api_view(["POST"])
 def increase_api_view(request):
-    if request.user.is_confirmed:
-        data = request.data
+    data = request.data
+    print("***", data, "***")
+
+    response = check_increase_validations(request.user, data)
+
+    if response is not None:
+        return response
+
+    amount = data["amount"]
+
+    with transaction.atomic():
+        record = IncreaseRecord.objects.create(
+            amount=amount,
+            seller=Seller.objects.select_for_update().get(id=request.user.id),
+        )
+
+    if record.completed:
+        response = Response({"credit": request.user.credit, "detail": "increase credit done successfully"}, status=200)
+    else:
+        response = Response({"detail": "increase credit failed", "error": "server-side error"}, status=500)
+
+    return response
+
+
+def check_increase_validations(seller, data):
+    if seller.is_confirmed:
         amount = data["amount"]
-        seller = request.user
         if isinstance(amount, int) and amount > 0:
-            record = IncreaseRecord.objects.create(
-                amount=amount,
-                seller=seller,
-            )
-            if record.completed:
-                return Response({"credit": seller.credit, "detail": "increase credit done successfully"}, status=200)
-            else:
-                return Response({"detail": "increase credit failed", "error": "server-side error"}, status=500)
+            return None
         else:
             return Response({"detail": "increase credit failed", "error": "amount must be a positive integer"},
                             status=400)
@@ -127,27 +146,42 @@ def increase_api_view(request):
         return Response({"detail": "please wait until bell's administrator confirm your account."}, status=403)
 
 
+@transaction.atomic
 @api_view(["POST"])
 def sale_api_view(request):
-    if request.user.is_confirmed:
-        data = request.data
+    data = request.data
+
+    response = check_increase_validations(request.user, data)
+
+    if response is not None:
+        return response
+
+    amount = data["amount"]
+    phone_number = data["phone_number"]
+
+    with transaction.atomic():
+        record = SaleRecord.objects.create(
+            amount=amount,
+            seller=Seller.objects.select_for_update().get(id=request.user.id),
+            phone_number=phone_number,
+        )
+
+    if record.completed:
+        return Response({"credit": request.user.credit, "detail": "sale credit done successfully"}, status=200)
+    else:
+        if amount > request.user.credit:
+            return Response({"detail": "sale credit failed", "error": "not enough credit"}, status=400)
+        else:
+            return Response({"detail": "sale credit failed", "error": "server-side error"}, status=500)
+
+
+def check_sale_validations(seller, data):
+    if seller.is_confirmed:
         amount = data["amount"]
         phone_number = data["phone_number"]
-        seller = request.user
         if isinstance(amount, int) and amount > 0:
             if isinstance(phone_number, str):
-                record = SaleRecord.objects.create(
-                    amount=amount,
-                    seller=seller,
-                    phone_number=phone_number,
-                )
-                if record.completed:
-                    return Response({"credit": seller.credit, "detail": "sale credit done successfully"}, status=200)
-                else:
-                    if amount > seller.credit:
-                        return Response({"detail": "sale credit failed", "error": "not enough credit"}, status=400)
-                    else:
-                        return Response({"detail": "sale credit failed", "error": "server-side error"}, status=500)
+                return None
             else:
                 return Response({"detail": "sale credit failed", "error": "phone_number must be a string"}, status=400)
         else:
