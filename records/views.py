@@ -111,7 +111,6 @@ def credit_api_view(request):
 @api_view(["POST"])
 def increase_api_view(request):
     data = request.data
-    print("***", data, "***")
 
     response = check_increase_validations(request.user, data)
 

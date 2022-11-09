@@ -37,6 +37,9 @@ ALLOWED_HOSTS = [
 # Application definition
 
 INSTALLED_APPS = [
+    # monitoring:
+    "scout_apm.django",
+    # django:
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -173,3 +176,9 @@ SPECTACULAR_SETTINGS = {
     "DESCRIPTION": "B2B phone charge system, Developed with Django",
     "VERSION": "1.0.0",
 }
+
+# Scout settings
+SCOUT_MONITOR = True
+SCOUT_KEY = env.str("SCOUT_KEY")
+SCOUT_NAME = "Bell"
+SCOUT_ERRORS_ENABLED = True
